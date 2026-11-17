@@ -16,7 +16,7 @@ Python, pandas, scikit-learn, PostgreSQL, FastAPI, Docker
 - [ ] Dockerize and deploy
 
 ## Dataset
-Loan default dataset (source link to add).
+Loan default dataset (https://www.kaggle.com/datasets/nikhil1e9/loan-default).
 
 ## Results
 To be added.
