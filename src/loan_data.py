@@ -16,7 +16,8 @@ def load_loans() -> pd.DataFrame:
 def clean(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     for col in ["HasCoSigner", "HasDependents", "HasMortgage"]:
-        df[col] = df[col].map({"Yes": 1, "No": 0})
+        if not pd.api.types.is_numeric_dtype(df[col]):
+            df[col] = df[col].map({"Yes": 1, "No": 0})
     return df
 
 
