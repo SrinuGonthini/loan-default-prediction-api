@@ -35,6 +35,7 @@ Full analysis: [`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb)
 | Interest rate (%) | 15.9 | 13.2 |
 
 - **Employment matters most among categories:** unemployed borrowers default at 13.6%, full-time workers at 9.5%. Education, marital status and loan purpose differ by only 2 to 3 percentage points.
+- **Age is the strongest signal:** the default rate falls from 20.8% (ages 18-25) to 5.5% (ages 56-69).
 - **Strongest correlations with default:** age (-0.17), interest rate (+0.13), income (-0.10), months employed (-0.10), loan amount (+0.09). Credit score is weak (-0.03).
 - **Features are almost uncorrelated with each other**, so none is redundant.
 
