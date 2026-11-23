@@ -10,7 +10,7 @@ load_dotenv(ROOT / ".env")
 
 
 def load_loans() -> pd.DataFrame:
-    return pd.read_csv(ROOT / "data" / "loans.csv", low_memory=True)
+    return pd.read_csv(ROOT / "data" / "loans.csv", low_memory=False)
 
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
