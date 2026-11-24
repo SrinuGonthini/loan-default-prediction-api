@@ -3,7 +3,7 @@
 Predicts whether a loan applicant will default, using a machine learning model stored in Postgres and served through a FastAPI API in Docker.
 
 ## Status
-Day 6: exploratory data analysis complete and data loaded into Postgres. Next: baseline model and evaluation.
+Day 9: baseline models and evaluation metrics complete. Next: preprocessing pipeline with categorical features, then tree-based models.
 
 ## Tech stack
 Python, uv, NumPy, pandas, matplotlib, seaborn, SQLAlchemy, scikit-learn, PostgreSQL, FastAPI, Docker
@@ -11,19 +11,20 @@ Python, uv, NumPy, pandas, matplotlib, seaborn, SQLAlchemy, scikit-learn, Postgr
 ## Project plan
 - [x] Exploratory data analysis
 - [x] Load cleaned data into Postgres
+- [x] Baseline models and evaluation metrics
 - [ ] Train and compare 3 models
 - [ ] Serve the best model with FastAPI
 - [ ] Dockerize and deploy
 
 ## Dataset
-255,347 loans with 17 columns plus a loan ID. The target is `Default` (1 = defaulted, 0 = repaid). There are no missing values and no duplicate rows.
+255,347 loans with 16 features, the target `Default` (1 = defaulted, 0 = repaid) and a loan ID. There are no missing values and no duplicate rows.
 
 Source: [Loan Default dataset on Kaggle](https://www.kaggle.com/datasets/nikhil1e9/loan-default). Download the CSV and save it as `data/loans.csv` (the `data/` folder is not committed to Git).
 
 ## Findings from EDA
 Full analysis: [`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb)
 
-- **The data is imbalanced.** 11.6% of loans default (29,653 of 255,347), about 7.6 repaid loans for every default. Models will be judged on recall, F1 and ROC-AUC, not accuracy.
+- **The data is imbalanced.** 11.6% of loans default (29,653 of 255,347), about 7.6 repaid loans for every default. Models are judged on precision, recall, F1 and ROC-AUC, not accuracy.
 - **Defaulted loans differ from repaid loans:**
 
 | Feature (average) | Defaulted | Repaid |
@@ -43,10 +44,30 @@ Full analysis: [`notebooks/01_eda.ipynb`](notebooks/01_eda.ipynb)
 ![Default rate by age group](reports/figures/04_default_by_age.png)
 ![Correlation heatmap](reports/figures/05_Correlation.png)
 
+## Results
+Full analysis: [`notebooks/02_modeling.ipynb`](notebooks/02_modeling.ipynb)
+
+Baseline models use the 12 numeric columns only, with a stratified 80/20 train/test split (204,277 training rows, 51,070 test rows, 11.6% defaults in both). Scaling is done inside a pipeline, so it learns from the training data only.
+
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | PR-AUC |
+|---|---|---|---|---|---|---|
+| Dummy (always "no default") | 0.884 | 0.000 | 0.000 | 0.000 | 0.500 | 0.116 |
+| Logistic regression | 0.885 | 0.569 | 0.024 | 0.045 | 0.747 | 0.300 |
+| Logistic regression, balanced class weights | 0.672 | 0.217 | 0.699 | 0.331 | 0.747 | 0.299 |
+| Logistic regression, threshold 0.20 | 0.818 | 0.302 | 0.431 | 0.355 | 0.747 | 0.300 |
+
+- **Accuracy is misleading here.** The dummy scores 88.4% by never predicting a default, and plain logistic regression catches only 140 of 5,931 defaults.
+- **Class weights and a lower threshold trade precision for recall.** The balanced model catches 69.9% of defaults but flags 14,972 repaid loans. Lowering the threshold of the plain model to 0.20 gives the best F1 so far (0.355): 2,556 defaults caught, 5,915 repaid loans flagged.
+- **Ranking quality is moderate and unchanged by either method.** ROC-AUC is 0.747 for both logistic models, which is consistent with the weak signals found in the EDA.
+- **The threshold was chosen on the test set**, so the 0.20 result is slightly optimistic. Later stages will choose it on a validation split or with cross-validation.
+
+![Confusion matrices](reports/figures/06_confusion_matrix.png)
+![ROC curves](reports/figures/07_roc_curves.png)
+
 ## Project structure
 ```
 data/        raw and cleaned CSV files (not committed)
-notebooks/   exploration (01_eda.ipynb)
+notebooks/   01_eda.ipynb (exploration), 02_modeling.ipynb (baseline models and metrics)
 reports/     saved charts
 src/         reusable code (loan_data.py: load, clean, save to and read from Postgres)
 ```
@@ -76,10 +97,9 @@ Requires [uv](https://docs.astral.sh/uv/) and Docker.
    uv run python src/loan_data.py
    ```
 5. Open `notebooks/01_eda.ipynb` and run all cells. This also loads the data into the `loans` table in Postgres.
-
-## Results
-To be added: comparison of 3 models (F1, recall, ROC-AUC) after the modelling stage.
+6. Open `notebooks/02_modeling.ipynb` and run all cells. It reads the data back from Postgres.
 
 ## Limitations
 - The dataset appears synthetic: features are almost uncorrelated and credit score is nearly uninformative. Results show the pipeline, not real lending behaviour.
 - Age, marital status and education are sensitive attributes. A real credit model would need fairness checks and legal review.
+- Baseline models ignore the four text columns so far; they are added in the next stage.
